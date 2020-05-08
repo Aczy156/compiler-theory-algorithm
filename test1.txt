@@ -1,0 +1,6 @@
+int main{
+int a,b,c;
+A = 3;
+b = 1;
+c = a+b;
+}
