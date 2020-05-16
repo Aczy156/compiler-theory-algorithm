@@ -1,4 +1,5 @@
 from prettytable import PrettyTable
+import re
 
 
 class LL1_analysis:
@@ -7,8 +8,50 @@ class LL1_analysis:
         self.ptr = 0
 
     def load_grammer_and_init_stack_and_ptr(self, g):
-        print(g)
         """ 读取文法并解析 """
+        """ 首先输出原文法 """
+        origin_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])
+        idx = 1
+        left_recursion_list = []
+        origin_list = []
+        for line in re.split('\n', g):
+            # 清楚空格
+            line = "".join([i for i in line if i not in ['', ' ']])
+            if '->' in line:
+                for i in line.split('->')[1].split('|'):
+                    if line.split('->')[0] == i[0] and line.split('->')[0] not in left_recursion_list:
+                        left_recursion_list.append(line.split('->')[0])
+                    origin_grammar.add_row([idx, line.split('->')[0], i, line.split('->')[0] + '->' + i])
+                    origin_list.append([line.split('->')[0], i, line.split('->')[0] + '->' + i])
+                    idx += 1
+        print(origin_grammar)
+        """ 然后判断是否有左递归并消除左递归 """
+        advanced_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])
+        idx = 1
+        if len(left_recursion_list) > 0:
+            print('该文法存在左递归!!!      且该文法中存在左递归的非终结符为', end=' ')
+            print([i for i in left_recursion_list])
+            # 消除左递归
+            for lr in left_recursion_list:
+                for r in [i[1] for i in origin_list if i[0] == lr]:
+                    if r[0] == lr:
+                        advanced_grammar.add_row(
+                            [idx, lr, r[len(r) - 1] + lr.lower(), lr + '->' + r[len(r) - 1] + lr.lower()])
+                        advanced_grammar.add_row([idx + 1, lr.lower(), r[1:len(r)], lr.lower() + '->' + r[1:len(r)]])
+                        idx += 2
+                    else:
+                        advanced_grammar.add_row([idx, lr, r, lr + '->' + r])
+                        idx += 1
+            for i in origin_list:
+                if i[0] not in left_recursion_list:
+                    advanced_grammar.add_row([idx, i[0], i[1], i[2]])
+                    idx += 1
+            print('消除左递归之后的文法为')
+            print(advanced_grammar)
+        else:
+            print('该文法不存在左递归!!!')
+            return
+
         # TODO 对输入进来的文法进行解析 (当前先把数据默认解析好了)
         return 'i+*()#', 'EDTSF', [
             [' ', 'i', '+', '*', '(', ')', '#'],
@@ -70,9 +113,8 @@ class LL1_analysis:
 
 if __name__ == '__main__':
     """ main 1输入文法 2输入要分析的字符串 """
-    # grammar = str(open("test2.txt").read())
-    grammer = 'grammer is here'
-    ll1_analysis = LL1_analysis(Gram=grammer)
+    grammar = str(open("grammer.txt").read())
+    ll1_analysis = LL1_analysis(Gram=grammar)
     goal_str = str(input())
     ans_table = PrettyTable(['分析栈', '输入串', '操作'])
     ll1_analysis.LL1_analysis_solve(goal_str=goal_str, ans_table=ans_table)
@@ -86,8 +128,5 @@ if __name__ == '__main__':
     # print(a[idx:len(a)])
     # b = a[len(a)-1]
     # print(b)
-    # a = a[0:len(a)-1]
+    # a = a[1:len(a)]
     # print(a)
-
-
-
