@@ -243,8 +243,8 @@ class LL1_analysis:
 
 if __name__ == '__main__':
     """ main 1输入文法 2输入要分析的字符串 """
-    grammar = str(open("grammer.txt").read())
-    ll1_analysis = LL1_analysis(Gram=grammar)
+    grammer = str(open("grammer.txt").read())
+    ll1_analysis = LL1_analysis(Gram=grammer)
     goal_str = str(input())
     ans_table = PrettyTable(['分析栈', '输入串', '操作'])
     ll1_analysis.LL1_analysis_solve(goal_str=goal_str, ans_table=ans_table)
