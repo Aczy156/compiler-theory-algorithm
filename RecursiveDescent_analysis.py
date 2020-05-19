@@ -1,8 +1,8 @@
 import copy
-import random
+from Eliminate_Left_Recursion import EliminateLeftRecursion
 
 
-class recDescParser:
+class recDesc_analysis:
     def __init__(self, file_name):
 
         self.file_object = file_name  # 获取句柄
@@ -10,9 +10,11 @@ class recDescParser:
         self.ac_set = []
         self.string = ""  # 测试字符串
         self.p = 0  # 字符串指针
+        self.replace = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+                        'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         for line in self.file_object.readlines():
 
-            div_list = line.replace(' ', '').strip('\n').split('::')
+            div_list = line.replace(' ', '').strip('\n').split('->')
             if div_list[0] not in self.grammer.keys():
                 self.grammer[div_list[0]] = []
             self.grammer[div_list[0]].append(div_list[1])
@@ -21,65 +23,8 @@ class recDescParser:
                 if ch.isupper() and ch not in self.ac_set:
                     self.ac_set.append(ch)
 
-    def convert(self, ch_i, ch_j, grammer):
-
-        rules = copy.deepcopy(grammer)
-        for key in grammer.keys():
-            for item_i in grammer[key]:
-                if ch_i == key and ch_j == item_i[0]:
-                    rules[key].remove(item_i)
-                    for item_j in grammer[ch_j]:
-                        rules[key].append(item_j + item_i[1:])
-        return rules
-
-    def clean_direct_recur(self, ch_i, grammer, new_ac_set):
-        ch = ''
-        flag = 0
-        rules = copy.deepcopy(grammer)
-
-        while (True):
-            temp = chr(random.randint(65, 90))
-            if temp not in new_ac_set:
-                ch = temp
-                break
-
-        for key in grammer.keys():
-            for item_i in grammer[key]:
-                if ch_i == key and ch_i == item_i[0]:
-                    flag = 1
-                    if ch not in rules.keys():
-                        rules[ch] = []
-
-                    rules[ch].append(item_i[1:] + ch)
-                    rules[key].remove(item_i)
-
-        if flag == 0:  # 不存在左递归，不用消去
-            return rules, new_ac_set
-
-        for key in grammer.keys():
-            for item_i in grammer[key]:
-                if ch_i == key and ch_i != item_i[0]:
-                    if ch not in rules.keys():
-                        rules[ch] = []
-                    rules[ch_i].append(item_i + ch)
-                    rules[key].remove(item_i)
-        rules[ch].append('#')  # 空输入在最后，不会影响递归下降
-        new_ac_set.append(ch)
-        print(new_ac_set)
-        print(rules)
-        return rules, new_ac_set
-
-    def remove_left_recursion(self):
-        new_grammer = copy.deepcopy(self.grammer)
-        new_ac_set = copy.deepcopy(self.ac_set)
-
-        for i in range(len(self.ac_set)):
-            for j in range(0, i):
-                new_grammer = self.convert(self.ac_set[i], self.ac_set[j], new_grammer)
-            new_grammer, new_ac_set = self.clean_direct_recur(self.ac_set[i], new_grammer, new_ac_set)
-        return new_grammer, new_ac_set
-
-    def LCP(self, i, j, rules):  # 获取两个字符串之间的最长公共前缀
+    def LCP(self, i, j, rules):  # 获取的最长公共前缀
+        """ LCP 获取两个字符串之间最长公共前缀 """
         strs = [rules[i], rules[j]]
         res = ''
         for each in zip(*strs):
@@ -89,7 +34,9 @@ class recDescParser:
                 return res
         return res
 
+    # 获得最长公共前缀的元素的索引
     def get_lcp_res(self, key):  # 获得每个拥有公共前缀的元素下标
+        """ 利用字典存放 获取到的所有的非终结符对应的产生式的所有右半部分的推到的部分的共同前缀 """
         res = {}
         rules = self.grammer[key]
         for i in range(len(rules)):
@@ -103,28 +50,31 @@ class recDescParser:
             res.pop('')
         return res
 
+    # 消去公因子
     def remove_common_factor(self):
-        keys = list(self.grammer.keys())  # 事先保存好没有修改过的grammer_key
+        """ 消去公因子 """
+        keys = list(self.grammer.keys())  # 备份一份没有修改过的grammer的key
         for key in keys:
             while (True):
                 res = self.get_lcp_res(key)
-                if (res == {}):  # 不断迭代，直到没有公共前缀
+                if res == {}:  # 不断迭代，直到没有公共前缀
                     break
                 dels = []  # 存储需要删除的符号串
                 lcp = list(res.keys())[0]  # 策略：每次取一个公共前缀
                 ch = ''
-                while (True):
-                    temp = chr(random.randint(65, 90))
+
+                for temp in self.replace:
                     if temp not in self.ac_set:
                         ch = temp
                         break
+
                 self.ac_set.append(ch)
                 for i in res[lcp]:  # res[lcp]存储的要消除公共因子的元素下标
                     string = self.grammer[key][i]
                     dels.append(string)
                     string = string.lstrip(lcp)
                     if string == '':
-                        string += '#'
+                        string += 'ε'
                     if ch not in self.grammer.keys():
                         self.grammer[ch] = []
                     self.grammer[ch].append(string)  # 加到新的产生式里面
@@ -134,40 +84,44 @@ class recDescParser:
         return self.grammer, self.ac_set
 
     def match(self, ch):
+        """ 递归下降进行匹配 """
         for i in range(len(self.grammer[ch])):
             rule = self.grammer[ch][i]
+            print(i, '--->>>', rule)
             record_p = self.p  # 记录指针位置，方便回溯
-            flag = 1
+            flag = True
             for item in rule:
-                if (item in self.ac_set):
-                    flag = self.match(item)
-                    if (flag == 0): break
-                elif (self.p < len(self.string) and item == self.string[self.p]):
+                if item in self.ac_set:
+                    flag = self.match(item)  # 如果碰到了非终结符，直接递归非终结符的子程序
+                    if flag == 0: break
+                elif self.p < len(self.string) and item == self.string[self.p]:
                     self.p += 1
-                elif (item == '#'):  # 每个rules集的最后是'#'rule，所以在其他规则不行时，才用这条规则
+                elif item == 'ε':  # 如果rule中所有非ε都已经遍历，就遍历ε
                     break
                 else:
-                    flag = 0
+                    flag = False
                     break
             if flag == 0:
                 self.p = record_p
                 continue
             else:
-                return 1
-        return 0
+                return True
+        return False
 
     def output(self, grammer):
         res = []
         for key in grammer.keys():
             for item in grammer[key]:
-                res.append(key + '::' + item)
+                res.append(key + '->' + item)
         for item in res:
             print(item)
 
     def run(self):
         print('～～～～', self.grammer, '+++++++', self.ac_set)
         # 消除左递归
-        self.grammer, self.ac_set = self.remove_left_recursion()
+        eliminate_left_recursion = EliminateLeftRecursion(grammer=self.grammer
+                                                          , nonter=self.ac_set)
+        self.grammer, self.ac_set = eliminate_left_recursion.remove_left_recursion()
         print('==========', self.grammer, '+++++++', self.ac_set)
         # 提取公因子
         self.grammer, self.ac_set = self.remove_common_factor()
@@ -180,12 +134,12 @@ class recDescParser:
             if self.string == 'exit':
                 break
             flag = (self.match(self.ac_set[0]) & (self.p == len(self.string)))  # 必须要遍历完测试字符串
-            if (flag):
-                print(self.string + ' is Yes')
+            if flag:
+                print(self.string + ' 分析成功')
             else:
-                print(self.string + ' is No')
+                print(self.string + ' 分析失败')
 
 
 file_object = open('grammer.txt')
-RDP = recDescParser(file_object)
+RDP = recDesc_analysis(file_object)
 RDP.run()
