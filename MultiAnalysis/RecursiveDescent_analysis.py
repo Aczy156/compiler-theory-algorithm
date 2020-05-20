@@ -1,5 +1,4 @@
-import copy
-from Eliminate_Left_Recursion import EliminateLeftRecursion
+from tools.Eliminate_Left_Recursion import EliminateLeftRecursion
 
 
 class recDesc_analysis:
@@ -140,6 +139,6 @@ class recDesc_analysis:
                 print(self.string + ' 分析失败')
 
 
-file_object = open('grammer.txt')
+file_object = open('grammer_for_ll1_and_RD.txt')
 RDP = recDesc_analysis(file_object)
 RDP.run()

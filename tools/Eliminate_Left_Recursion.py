@@ -2,9 +2,9 @@ import copy
 
 
 class EliminateLeftRecursion:
-    def __init__(self, grammer, nonter):
+    def __init__(self, grammer, vn):
         self.grammer = grammer
-        self.nonter = nonter
+        self.vn = vn
         # 非终结符中用于增添的可选择的大写字母
         self.replace = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
                    'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -12,11 +12,11 @@ class EliminateLeftRecursion:
     def remove_left_recursion(self):
         """ 消除左递归 """
         new_grammer = copy.deepcopy(self.grammer)
-        new_ac_set = copy.deepcopy(self.nonter)
-        for i in range(len(self.nonter)): # 利用两层循环来消除左递归
+        new_ac_set = copy.deepcopy(self.vn)
+        for i in range(len(self.vn)): # 利用两层循环来消除左递归
             for j in range(0, i):
-                new_grammer = self.convert(self.nonter[i], self.nonter[j], new_grammer)
-            new_grammer, new_ac_set = self.clean_direct_recur(self.nonter[i], new_grammer, new_ac_set)
+                new_grammer = self.convert(self.vn[i], self.vn[j], new_grammer)
+            new_grammer, new_ac_set = self.clean_direct_recur(self.vn[i], new_grammer, new_ac_set)
         return new_grammer, new_ac_set
 
     def convert(self, ch_i, ch_j, grammer):
