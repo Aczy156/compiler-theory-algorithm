@@ -61,6 +61,6 @@ class EliminateLeftRecursion:
                     rules[key].remove(item_i)
         rules[ch].append('ε')  # 空输入在最后，不会影响递归下降
         new_ac_set.append(ch)
-        print(new_ac_set)
-        print(rules)
+        # print(new_ac_set)
+        # print(rules)
         return rules, new_ac_set

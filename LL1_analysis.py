@@ -36,99 +36,79 @@ class LL1_analysis:
                     # grammer_list.append(line.split('->')[0] + '->' + i)
                     idx += 1
 
-        print(origin_grammar)
-        print('origin grammer :::::', grammer_list)
-        print('origin nonter  [[[[[[[[', nonter_list)
+        print('\n--------- 在消除左递归之前的文法为 ----------\n', origin_grammar)
+        # print('origin grammer :::::', grammer_list)
+        # print('origin nonter  [[[[[[[[', nonter_list)
 
         """ 消除左递归 """
         eliminate_left_recursion = EliminateLeftRecursion(grammer=grammer_list, nonter=nonter_list)
         new_grammer, new_nonter = eliminate_left_recursion.remove_left_recursion()
-        print('new grammer ==== ', new_grammer)
-        print('new nonter ----------', new_nonter)
+        # print('new grammer ==== ', new_grammer)
+        # print('new nonter ----------', new_nonter)
         advanced_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])  # 利用prettytable来渲染出新的消去左递归的文法
+        only_grammer = []
         idx = 1
+        new_ter = []
         for i in new_nonter:
             for j in new_grammer[i]:
                 advanced_grammar.add_row([idx, i, j, i + '->' + j])
+                only_grammer.append(i + '->' + j)
                 idx += 1
-        print(advanced_grammar)
-
-        """ 然后判断是否有左递归并消除左递归 """
-
-        # idx = 1
-        # if len(left_recursion_list) > 0:
-        #     print('该文法存在左递归!!!      且该文法中存在左递归的非终结符为', end=' ')
-        #     print([i for i in left_recursion_list])
-        #     # 消除左递归
-        #
-        #     """ 消除左递归 """
-        #     advanced_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])
-        #     eliminate_left_recursion = EliminateLeftRecursion(grammer=grammer_list, nonter=nonter_list)
-        #     new_grammer, new_nonter = eliminate_left_recursion.remove_left_recursion()
-        #     print('new grammer ==== ', new_grammer)
-        #     print('new nonter ----------', new_nonter)
-        # else:
-        #     print('该文法不存在左递归!!!')
-        #     return None, None, None, None
-
-        # for lr in left_recursion_list:
-        #     for r in [i[1] for i in origin_list if i[0] == lr]:
-        #         if r[0] == lr:
-        #             # 找一个没有使用过的新的符号作为新产生的非终结符
-        #             for i in replace:
-        #                 if i not in origin_list:
-        #                     new_nonter = i
-        #                     replace.remove(i)  # 然后移除这个符号
-        #                     break
-        #             advanced_grammar.add_row(
-        #                 [idx, lr, r[len(r) - 1] + new_nonter, lr + '->' + r[len(r) - 1] + new_nonter])
-        #             advanced_grammar.add_row([idx + 1, new_nonter, r[1:len(r)] + new_nonter,
-        #                                       new_nonter + '->' + r[1:len(r)] + new_nonter])
-        #             advanced_grammar.add_row([idx + 2, new_nonter, 'ε', new_nonter + '->ε'])
-        #             # only_grammer.append(lr + '->' + r[len(r) - 1] + new_nonter)
-        #             # only_grammer.append(new_nonter + '->' + r[1:len(r)] + new_nonter)
-        #             # only_grammer.append(new_nonter + '->ε')
-        #             idx += 3
-        #         # else:
-        #         #     advanced_grammar.add_row([idx, lr, r, lr + '->' + r])
-        #         #     idx += 1
-        # for i in origin_list:
-        #     if i[0] not in left_recursion_list:
-        #         advanced_grammar.add_row([idx, i[0], i[1], i[2]])
-        #         # only_grammer.append(i[2])
-        #         idx += 1
-        # print('消除左递归之后的文法为')
-        # print(advanced_grammar)
-
-        # print('---------------- test -----------------------')
-        # print(only_grammer)
+                for t in j:  # 获取当前的所有的终结符
+                    if t not in new_ter and t not in new_nonter and t != 'ε':
+                        new_ter.append(t)
+        new_ter.append('#')
+        print('\n\n--------- 消除左递归的文法为 ----------\n', advanced_grammar, '\n\n--------- 消除文法左递归的文法的非终结符为 ----------\n',
+              new_nonter,
+              '\n\n--------- 消除文法左递归的文法的终结符为 ----------\n', new_ter)
 
         """ 调用下面函数来产生FIRST集合和FOLLOW集合 """
-        # FIRST, FOLLOW = self.get_first_and_follow_set(only_grammer)
-        # # print(FIRST)
-        # # print(FOLLOW)
-        # print('--------- 文法的FIRST集为 ----------')
-        # for i, j in FIRST.items():
-        #     str = j[0]
-        #     for temp in j[1:]:
-        #         str = str + ',' + temp
-        #     print("FIRST(" + i + ")" + " = {" + str + "}")
-        # print('--------- 文法的FOLLOW集为 ----------')
-        # for i, j in FOLLOW.items():
-        #     str = j[0]
-        #     for temp in j[1:]:
-        #         str = str + ',' + temp
-        #     print("FOLLOW(" + i + ")" + " = {" + str + "}")
+        FIRST, FOLLOW = self.get_first_and_follow_set(only_grammer)
+        # print(FIRST)
+        # print(FOLLOW)
+        print('\n\n--------- 文法的FIRST集为 ----------')
+        for i, j in FIRST.items():
+            str = j[0]
+            for temp in j[1:]:
+                str = str + ',' + temp
+            print("FIRST(" + i + ")" + " = {" + str + "}")
+        print('\n\n--------- 文法的FOLLOW集为 ----------')
+        for i, j in FOLLOW.items():
+            str = j[0]
+            for temp in j[1:]:
+                str = str + ',' + temp
+            print("FOLLOW(" + i + ")" + " = {" + str + "}")
+
+        # print('First集合 ～～～～', FIRST)
+        # print('Follow集合 ～～～～', FOLLOW)
+        """ 利用first集和follow集来产生分析表 """
+        analysis_table = [[None] * (1 + len(new_ter)) for row in range(1 + len(new_nonter))]
+        analysis_table[0][0] = ' '
+        for i in range(len(new_ter)):
+            analysis_table[0][i + 1] = new_ter[i]
+        for i in range(len(new_nonter)):
+            analysis_table[i + 1][0] = new_nonter[i]
+            for t in new_grammer[new_nonter[i]]:  # 遍历该文法的所有产生式
+                if t == 'ε':  # 如果是ε 对应在follow(i)中填上产生式
+                    for j in range(len(new_ter)):  # 遍历所有的终结符，并在对应的位置添加上对应的产生式子
+                        if new_ter[j] in FOLLOW[new_nonter[i]]:  # Follow 为当前的非终结符的follow集
+                            analysis_table[i + 1][j + 1] = 'ε'
+                else:
+                    for j in range(len(new_ter)):
+                        if new_ter[j] in FIRST[new_nonter[i]]:
+                            analysis_table[i + 1][j + 1] = t
+
+        # print(analysis_table)
+        pretty_table_title = ['非终结符']
+        for i in new_ter:
+            pretty_table_title.append(i)
+        analysis_pretty_table = PrettyTable(pretty_table_title)
+        for i in range(len(analysis_table) - 1):
+            analysis_pretty_table.add_row(analysis_table[i + 1])
+        print('\n\n--------- 该文法对应的预测分析表为 ----------\n', analysis_pretty_table)
 
         # TODO 对输入进来的文法进行解析 (当前先把数据默认解析好了)
-        return 'i+*()#', 'EDTSF', [
-            [' ', 'i', '+', '*', '(', ')', '#'],
-            ['E', 'TD', None, None, 'TD', None, None],
-            ['D', None, '+TD', None, None, 'ε', 'ε'],
-            ['T', 'FS', None, None, 'FS', None, None],
-            ['S', None, 'ε', '*FS', None, 'ε', 'ε'],
-            ['F', 'i', None, None, '(E)', None, None],
-        ], '#E'
+        return "".join(new_ter), "".join(new_nonter), analysis_table, '#' + new_nonter[0]
 
     def get_first_and_follow_set(self, grammars):
         FIRST = {}
