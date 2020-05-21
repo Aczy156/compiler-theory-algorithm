@@ -1,19 +1,17 @@
 from prettytable import PrettyTable
 import re
 from tools.Eliminate_Left_Recursion import EliminateLeftRecursion
+from tools.Extract_Common_Factors import ExtractCommonFactors
+import tools.Draw_Grammer as draw_grammer
 
 
 class LL1_analysis:
     def __init__(self, Gram):
-        self.vt, self.vn, self.analysis_table, self.stack_str = self.load_grammer_and_init_stack_and_ptr(g=Gram)
+        self.vt, self.vn, self.analysis_table, self.stack_str = self.init_all_(g=Gram)
         self.ptr = 0
 
-    def load_grammer_and_init_stack_and_ptr(self, g):
+    def init_all_(self, g):
         """ 读取文法并解析 """
-        origin_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])
-        idx = 1
-        left_recursion_list = []  # 存在左递归的非终结符
-        origin_list = []  # 完整的grammer表格
         grammer_list = {}  # grammer 字典，对于特定的非终结符vn来来映射产生式
         vn_list = []  # 非终结符列表
         for line in re.split('\n', g):
@@ -28,40 +26,39 @@ class LL1_analysis:
                         grammer_list[line.split('->')[0]].append(i)
                     else:
                         grammer_list[line.split('->')[0]].append(i)  # 用于消除左递归的字典填充
-                    origin_grammar.add_row(
-                        [idx, line.split('->')[0], i, line.split('->')[0] + '->' + i])  # prettytable 填充
                     # origin_list.append([line.split('->')[0], i, line.split('->')[0] + '->' + i])
                     # grammer_list.append(line.split('->')[0] + '->' + i)
-                    idx += 1
-
-        print('\n--------- 在消除左递归之前的文法为 ----------\n', origin_grammar)
-        # print('origin grammer :::::', grammer_list)
-        # print('origin vn  [[[[[[[[', vn_list)
+        # print('==========', grammer_list, '+++++++', vn_list)
+        draw_grammer.draw_grammer(grammer=grammer_list, vn=vn_list, descrpition='在消除左递归之前的文法')  # 打印文法
 
         """ 消除左递归 """
+        # print('==========', grammer_list, '+++++++', vn_list)
         eliminate_left_recursion = EliminateLeftRecursion(grammer=grammer_list, vn=vn_list)
         new_grammer, new_vn = eliminate_left_recursion.remove_left_recursion()
-        # print('new grammer ==== ', new_grammer)
-        # print('new vn ----------', new_vn)
-        advanced_grammar = PrettyTable(['编号', '箭头左边', '箭头右边', '产生式'])  # 利用prettytable来渲染出新的消去左递归的文法
+        draw_grammer.draw_grammer(grammer=new_grammer, vn=new_vn, descrpition='消除左递归之后的文法')  # 打印文法
+
+        """ 提取公因子 """
+        extractcommonfactors = ExtractCommonFactors(grammer=new_grammer, vn=new_vn)
+        new_grammer, new_vn = extractcommonfactors.remove_common_factor()
+        # print('==========', new_grammer, '+++++++', new_vn)
+        draw_grammer.draw_grammer(grammer=new_grammer, vn=new_vn, descrpition='提取公因子之后的文法')  # 打印文法
+
+        """ 获取终结符、打印终结符和非终结符集合 """
         only_grammer = []
-        idx = 1
         new_vt = []
         for i in new_vn:
             for j in new_grammer[i]:
-                advanced_grammar.add_row([idx, i, j, i + '->' + j])
                 only_grammer.append(i + '->' + j)
-                idx += 1
                 for t in j:  # 获取当前的所有的终结符
                     if t not in new_vt and t not in new_vn and t != 'ε':
                         new_vt.append(t)
         new_vt.append('#')
-        print('\n\n--------- 消除左递归的文法为 ----------\n', advanced_grammar, '\n\n--------- 消除文法左递归的文法的非终结符为 ----------\n',
+        print('\n\n--------- 消除文法左递归的文法的非终结符为 ----------\n',
               new_vn,
               '\n\n--------- 消除文法左递归的文法的终结符为 ----------\n', new_vt)
 
-        """ 调用下面函数来产生FIRST集合和FOLLOW集合 """
-        FIRST, FOLLOW = self.get_first_and_follow_set(only_grammer)
+        """ 获取FIRST集合和FOLLOW集合并输出 """
+        FIRST, FOLLOW = self.get_first_and_follow_set(grammars=only_grammer, vn=new_vn)
         # print(FIRST)
         # print(FOLLOW)
         print('\n\n--------- 文法的FIRST集为 ----------')
@@ -77,8 +74,6 @@ class LL1_analysis:
                 str = str + ',' + temp
             print("FOLLOW(" + i + ")" + " = {" + str + "}")
 
-        # print('First集合 ～～～～', FIRST)
-        # print('Follow集合 ～～～～', FOLLOW)
         """ 利用first集和follow集来产生分析表 """
         analysis_table = [[None] * (1 + len(new_vt)) for row in range(1 + len(new_vn))]
         analysis_table[0][0] = ' '
@@ -96,6 +91,7 @@ class LL1_analysis:
                         if new_vt[j] in FIRST[new_vn[i]]:
                             analysis_table[i + 1][j + 1] = t
 
+        """ 格式化输出分析表 """
         # print(analysis_table)
         pretty_table_title = ['非终结符']
         for i in new_vt:
@@ -105,31 +101,29 @@ class LL1_analysis:
             analysis_pretty_table.add_row(analysis_table[i + 1])
         print('\n\n--------- 该文法对应的预测分析表为 ----------\n', analysis_pretty_table)
 
-        # TODO 对输入进来的文法进行解析 (当前先把数据默认解析好了)
+        """ 将所有预处理的数据返回 """
         return "".join(new_vt), "".join(new_vn), analysis_table, '#' + new_vn[0]
 
-    def get_first_and_follow_set(self, grammars):
+    def get_first_and_follow_set(self, grammars,vn):
         FIRST = {}
         FOLLOW = {}
-        # 初始化first 集 和follow集合字典的键值对中的 值 为空
-        for str in grammars:
+        """ first集和follow集初始化 """
+        for str in grammars: # 初始化first 集 和follow集合字典的键值对中的 值 为空
             part_begin = str.split("->")[0]
             part_end = str.split("->")[1]
             FIRST[part_begin] = ""
             FOLLOW[part_begin] = "#"
+
         """ 获取first集 """
-        # 求first集 中第第一部分针对 ->  直接推出第一个字符为终结符 部分
-        for str in grammars:
+        for str in grammars: # 求first集 中第第一部分针对 ->  直接推出第一个字符为终结符 部分
             part_begin = str.split("->")[0]
             part_end = str.split("->")[1]
             if not part_end[0].isupper():
                 FIRST[part_begin] = FIRST.get(part_begin) + part_end[0]
-        for i in range(2):
-            while (1):
+        for i in range(len(vn)):
+            while True:
                 test = FIRST
-
-                # 求first第二部分 针对 A -> B型  把B的first集加到A 的first集合中
-                for str in grammars:
+                for str in grammars: # 求first第二部分 针对 A -> B型  把B的first集加到A 的first集合中
                     part_begin = ''
                     part_end = ''
                     part_begin += str.split('->')[0]
@@ -148,10 +142,9 @@ class LL1_analysis:
                     break
 
         """ 获取follow集合 """
-        for i in range(2):
-            while (1):
+        for i in range(len(vn)):
+            while True:
                 test = FOLLOW
-
                 # 计算follow集的第一部分，先计算 S -> A b 类型的
                 for str in grammars:
                     part_begin = str.split("->")[0]
@@ -206,7 +199,7 @@ class LL1_analysis:
 
     def LL1_analysis_solve(self, goal_str, ans_table):
         vt, vn, analysis_table, stack_str, ptr = self.vt, self.vn, self.analysis_table, self.stack_str, self.ptr
-        """ LL1 analysis solution """
+        """ LL1  分析 """
         while ptr >= 0 and ptr <= len(goal_str):
             stack_top = stack_str[len(stack_str) - 1]  # 获取栈顶
             goal_pos = goal_str[ptr]
@@ -223,8 +216,8 @@ class LL1_analysis:
                     return
                 else:  # 栈顶符号=当前输入符号但是并不都等于#
                     # --printstat相等弹栈，指针前移
-                    print('相等弹栈，指针前移')
-                    ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], '相等弹栈，指针前移'])
+                    print('栈顶符号=当前输入符号，指针前移')
+                    ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], '栈顶符号=当前输入符号，指针前移'])
                     stack_str = stack_str[0:len(stack_str) - 1]  # 弹栈
                     ptr += 1
                     continue
@@ -257,18 +250,12 @@ if __name__ == '__main__':
     """ main 1输入文法 2输入要分析的字符串 """
     grammer = str(open('./data/grammer_for_ll1_and_RD.txt').read())
     ll1_analysis = LL1_analysis(Gram=grammer)
-    goal_str = str(input())+'#'
-    ans_table = PrettyTable(['分析栈', '输入串', '操作'])
-    ll1_analysis.LL1_analysis_solve(goal_str=goal_str, ans_table=ans_table)
+    while True:
+        goal_str = str(input('请输入字符串(exit跳出循环):')) + '#'
+        if goal_str == 'exit':
+            break
+        else:
+            ans_table = PrettyTable(['分析栈', '输入串', '操作'])
+            ll1_analysis.LL1_analysis_solve(goal_str=goal_str, ans_table=ans_table)
+            print(ans_table)
 
-    # i+i*i#
-    print(ans_table)
-
-    # a = '123456'
-    # idx = 3
-    # print(a[idx])
-    # print(a[idx:len(a)])
-    # b = a[len(a)-1]
-    # print(b)
-    # a = a[1:len(a)]
-    # print(a)
