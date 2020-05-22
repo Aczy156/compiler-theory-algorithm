@@ -18,6 +18,7 @@ class ExtractCommonFactors:
         return res
 
     def get_lcp_res(self, key): #获得每个拥有公共前缀的元素下标
+        """ 获得LCP公共前缀的索引 """
         res = {}
         rules = self.grammer[key]
         for i in range(len(rules)):

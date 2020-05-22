@@ -20,6 +20,7 @@ class EliminateLeftRecursion:
         return new_grammer, new_ac_set
 
     def convert(self, ch_i, ch_j, grammer):
+        """ 对特定的字符进行转换 """
         rules = copy.deepcopy(grammer)  # 复制一份
         for key in grammer.keys():
             for item_i in grammer[key]:
@@ -30,11 +31,12 @@ class EliminateLeftRecursion:
         return rules
 
     def clean_direct_recur(self, ch_i, grammer, new_ac_set):
+        """ 清除直接左递归 """
         ch = ''
         flag = 0
         rules = copy.deepcopy(grammer)
 
-        for temp in self.replace:
+        for temp in self.replace: # 选择未被使用的非终结符
             if temp not in new_ac_set:
                 ch = temp
                 break

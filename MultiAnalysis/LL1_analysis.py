@@ -26,13 +26,10 @@ class LL1_analysis:
                         grammer_list[line.split('->')[0]].append(i)
                     else:
                         grammer_list[line.split('->')[0]].append(i)  # 用于消除左递归的字典填充
-                    # origin_list.append([line.split('->')[0], i, line.split('->')[0] + '->' + i])
-                    # grammer_list.append(line.split('->')[0] + '->' + i)
-        # print('==========', grammer_list, '+++++++', vn_list)
         draw_grammer.draw_grammer(grammer=grammer_list, vn=vn_list, descrpition='在消除左递归之前的文法')  # 打印文法
 
         """ 消除左递归 """
-        # print('==========', grammer_list, '+++++++', vn_list)
+        print('==========', grammer_list, '+++++++', vn_list)
         eliminate_left_recursion = EliminateLeftRecursion(grammer=grammer_list, vn=vn_list)
         new_grammer, new_vn = eliminate_left_recursion.remove_left_recursion()
         draw_grammer.draw_grammer(grammer=new_grammer, vn=new_vn, descrpition='消除左递归之后的文法')  # 打印文法
@@ -197,43 +194,39 @@ class LL1_analysis:
                     break
         return FIRST, FOLLOW
 
+    """ LL1分析过程 """
     def LL1_analysis_solve(self, goal_str, ans_table):
         vt, vn, analysis_table, stack_str, ptr = self.vt, self.vn, self.analysis_table, self.stack_str, self.ptr
-        """ LL1  分析 """
         while ptr >= 0 and ptr <= len(goal_str):
             stack_top = stack_str[len(stack_str) - 1]  # 获取栈顶
             goal_pos = goal_str[ptr]
-            print(stack_str, '  ', stack_top, '  ', goal_pos)
+            # print(stack_str, '  ', stack_top, '  ', goal_pos)
             if (stack_top not in vt and stack_top not in vn) or goal_pos not in vt:  # 非法输入的情况
-                # --printstat不合法
                 print('输入不合法')
                 return
             elif stack_top == goal_pos:
                 if stack_top == '#':  # 栈顶符号=当前输入符号=#
-                    # --printstat成功
                     print('分析成功')
                     ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], '分析成功'])
                     return
                 else:  # 栈顶符号=当前输入符号但是并不都等于#
                     # --printstat相等弹栈，指针前移
-                    print('栈顶符号=当前输入符号，指针前移')
+                    # print('栈顶符号=当前输入符号，指针前移')
                     ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], '栈顶符号=当前输入符号，指针前移'])
                     stack_str = stack_str[0:len(stack_str) - 1]  # 弹栈
                     ptr += 1
                     continue
             lookup_table = analysis_table[max(vn.find(stack_top), vt.find(stack_top)) + 1][
                 max(vn.find(goal_pos), vt.find(goal_pos)) + 1]
-            print(stack_top, ' ~~~~~~~~~ ', goal_pos, ' ~~~~~~~~~ ', lookup_table)
+            # print(stack_top, ' ~~~~~~~~~ ', goal_pos, ' ~~~~~~~~~ ', lookup_table)
             if lookup_table is not None:
                 if lookup_table == 'ε':
-                    # --printstat ε,弹栈
-                    print('ε,弹栈')
+                    # print('ε,弹栈')
                     ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], 'ε,弹栈'])
                     stack_str = stack_str[0:len(stack_str) - 1]  # 弹栈
                     continue
                 else:
-                    # --printstat 存在对应的产生式，就把产生式反向压栈
-                    print('存在对应的产生式并反向压栈')
+                    # print('存在对应的产生式并反向压栈')
                     ans_table.add_row([stack_str, goal_str[ptr:len(goal_str)], '存在对应的产生式并反向压栈'])
                     stack_str = stack_str[0:len(stack_str) - 1]  # 弹栈
                     lt_list = list(lookup_table)
@@ -241,8 +234,7 @@ class LL1_analysis:
                     stack_str += "".join(lt_list)
                     continue
             else:
-                # --printstat 找不到对应的产生式 ，error 退出
-                print('分析失败，没有找到产生式子')
+                print('分析失败')
                 return
 
 
@@ -252,10 +244,13 @@ if __name__ == '__main__':
     ll1_analysis = LL1_analysis(Gram=grammer)
     while True:
         goal_str = str(input('请输入字符串(exit跳出循环):')) + '#'
-        if goal_str == 'exit':
+        if goal_str == 'exit#':
             break
         else:
             ans_table = PrettyTable(['分析栈', '输入串', '操作'])
             ll1_analysis.LL1_analysis_solve(goal_str=goal_str, ans_table=ans_table)
             print(ans_table)
+
+
+
 

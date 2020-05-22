@@ -80,5 +80,11 @@ class recDesc_analysis:
 
 if __name__ == '__main__':
     file_object = open('./data/grammer_for_ll1_and_RD.txt')
-    RDP = recDesc_analysis(file_object)
-    RDP.solve()
+    rda = recDesc_analysis(file_object)
+    rda.solve()
+
+# i+i*i
+# i+(i+i*(i+i))
+# i+(i+i*(i+i)))
+# i*
+# (i+i*i)

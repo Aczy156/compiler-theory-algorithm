@@ -260,7 +260,7 @@ if __name__ == '__main__':
                 analysis_process_prettytable = PrettyTable(['编号', '栈', '符号串', '动作'])
                 result, steps = solve(grammar=grammar, prior_table=prior_table, sentence=goal_str)
                 if not result:
-                    print('分析失败，该输入串不是一个句子')
+                    print('分析失败')
                 else:
                     print('分析成功')
                     left = '#{0}#'.format(goal_str)
@@ -276,3 +276,6 @@ if __name__ == '__main__':
                         # print(i,' ~~~ ', cur,' ~~~ ', left,' ~~~ ', act)
                         analysis_process_prettytable.add_row([i, cur, left, act])
                     print(analysis_process_prettytable)
+
+
+
